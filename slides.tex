@@ -30,13 +30,11 @@
 %\usepackage[math]{iwona}
 %\usepackage[sfdefault,light]{roboto}
 
-\author{Yournamehere Surnamehere}
-\title{Demonstration slides in Beamer with Metropolis} %really change this!
-\date{September 2020} %change this too
-% better alternative:
-%\date{MFF UK, September 2020}
-% also possible:
-%\date{}
+\author{Jiří Klepl}
+\title{Inference-driven resource managemenent and polymorphism in systems programming} %really change this!
+\date{MFF UK, September 2022}
+
+\newcommand{\xxx}[1]{\textcolor{red!}{#1}}
 
 \begin{document}
 \maketitle
@@ -52,14 +50,57 @@
 % I follow with a demonstration that shows how I would present and defend why I
 % developed this `template' slideshow.
 
-\begin{frame}{Motivation}
-\begin{itemize}
-\item Repeating all instructions to all students is complicated; total number of instructions is:
-$$\mathcal{O}(s\cdot i)$$
-\pause % BEAMER MAGIC
-\item Solid chance of missing something important
-\item Correcting the same student errors all over again is boring
-\end{itemize}
+\begin{frame}{Goals}
+  \begin{itemize}
+    \item Reduction of code repetition in systems programming
+    \item Type inference of variables and record fields
+    \item Automatic resource management
+    \item Tackling subtypes
+      \begin{itemize}
+        \item Many low-level languages have various \emph{constness} requirements (\lstinline{constexpr}) on variables or some other requirements that are parallel to the types recognized by the languages
+      \end{itemize}
+  \end{itemize}
+  \pause
+  How do we achieve these goals? \xxx{do a picture for each}
+  \pause
+  \begin{itemize}
+    \item Parametric polymorphism (idea: ``linear'' type functions)
+    \item Multi-parameter typeclasses (overloading constrained by a relation)
+    \item Automatic calls to resource management functions (bound to a resource lifetime)
+    \item New extension to Hindley-Milner-style type systems
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Co bylo zapotrebi}
+  \xxx{To neviem}
+\end{frame}
+
+\begin{frame}{Vysledek + obrazky}
+\end{frame}
+
+\begin{frame}[standout]{Je to na githubu + vyzkouset}
+  \url{https://github.com/jiriklepl/masters-thesis-code}
+\end{frame}
+
+\begin{frame}{proc}
+\end{frame}
+
+\begin{frame}{bakalarka}
+\end{frame}
+
+\begin{frame}{rozdil c-{}- a c}
+\end{frame}
+
+\begin{frame}{MPTC + proc}
+\end{frame}
+
+\begin{frame}{proc to je slozity}
+\end{frame}
+
+\begin{frame}{detaily implementace (asi 4 slajdy)}
+\end{frame}
+
+\begin{frame}{najschlee}
 \end{frame}
 
 % if your approach idea can be made this simple, use a standout slide
