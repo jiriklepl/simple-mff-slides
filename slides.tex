@@ -7,6 +7,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
+\usepackage{xcolor}
 
 \usepackage{tikz}\usetikzlibrary{positioning} %remove if not using diagrams
 \usepackage{listings} %remove this if you don't need code listings
@@ -71,11 +72,28 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Co bylo zapotrebi}
-  \xxx{To neviem}
+\begin{frame}{Proof-of-concept compiler}
+  \begin{enumerate}
+    \item Tokenization and parsing (\xxx{arrow} AST)
+    \item Flow and variable live-range analysis (\xxx{arrow} annotated AST and \xxx{some metadata})
+    \begin{itemize}
+      \color{olive}
+      \item Automatic resource management added to the AST
+    \end{itemize}
+    \item Constraint generation and AST elaboration
+    \item Type inference
+    \item Monomorphization and postprocessing of the elaborated AST according to the inferred types (name mangling, insertion of inferred types)
+    \item Assembly generation
+  \end{enumerate}
 \end{frame}
 
-\begin{frame}{Vysledek + obrazky}
+\begin{frame}{\xxx{Focus: type inference}}
+  \begin{itemize}
+    \item Parametric polymorphism (idea: ``linear'' type functions)
+    \item Multi-parameter typeclasses (overloading constrained by a relation)
+    \item Automatic calls to resource management functions (bound to a resource lifetime)
+    \item New extension to Hindley-Milner-style type systems
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[standout]{Je to na githubu + vyzkouset}
@@ -83,15 +101,45 @@
 \end{frame}
 
 \begin{frame}{proc}
+  Systems programming covers wide range of applications:
+
+  \begin{itemize}
+    \item Operating systems and drivers
+    \item real-time mission-critical systems
+    \item embedded systems
+  \end{itemize}
+
+  Common characteristics:
+
+  \begin{itemize}
+    \item Strict requirements on resource usage: power, time, performance, efficiency, etc.
+    \item Reliability and errorlessness
+    \item Maintainability
+    \item \xxx{go on}
+  \end{itemize}
 \end{frame}
 
-\begin{frame}{bakalarka}
+\begin{frame}{Our starting point}
+  The previous work showed possible benefits of combining a procedural language and a Hindley-Milner-style type system, it lacked: (\xxx{make it a bad color})
+
+  \begin{itemize}
+    \item Type inference of record fields
+    \begin{itemize}
+      \item Multi-parameter typeclasses with functional dependencies (type functions)
+    \end{itemize}
+    \item Support for automatic resource management
+    \item Type system coverage of subtypes (C \lstinline{const}, \lstinline{volatile})
+    \item Extensibility with more advanced type features (e.g. existentials)
+  \end{itemize}
 \end{frame}
 
 \begin{frame}{rozdil c-{}- a c}
 \end{frame}
 
-\begin{frame}{MPTC + proc}
+\begin{frame}{Multi-parameter type classes + proc}
+  \begin{itemize}
+    \item 
+  \end{itemize}
 \end{frame}
 
 \begin{frame}{proc to je slozity}
@@ -207,8 +255,8 @@ How we arrived at this?
 \centering
 {\Large\bfseries Thank you for attention!}
 
-You can try the results on GitHub: \\
-\url{https://github.com/exaexa/simple-mff-slides}
+% You can try the results on GitHub: \\
+% \url{https://github.com/exaexa/simple-mff-slides}
 
 \end{frame}
 \end{document}
