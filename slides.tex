@@ -36,6 +36,7 @@
 \date{MFF UK, September 2022}
 
 \newcommand{\xxx}[1]{\textcolor{red!}{#1}}
+\newcommand{\li}[1]{\lstinline{#1}}
 
 \begin{document}
 \maketitle
@@ -58,12 +59,16 @@
     \item Automatic resource management
     \item Tackling subtypes
       \begin{itemize}
-        \item Many low-level languages have various \emph{constness} requirements (\lstinline{constexpr}) on variables or some other requirements that are parallel to the types recognized by the languages
+        \item Many low-level languages have various \emph{constness} requirements (\li{constexpr}) on variables or some other requirements that are parallel to the types recognized by the languages
       \end{itemize}
   \end{itemize}
+  
   \pause
-  How do we achieve these goals? \xxx{do a picture for each}
+  
+  How do we achieve these goals?
+  
   \pause
+  
   \begin{itemize}
     \item Parametric polymorphism (idea: ``linear'' type functions)
     \item Multi-parameter typeclasses (overloading constrained by a relation)
@@ -89,10 +94,89 @@
 
 \begin{frame}{\xxx{Focus: type inference}}
   \begin{itemize}
-    \item Parametric polymorphism (idea: ``linear'' type functions)
-    \item Multi-parameter typeclasses (overloading constrained by a relation)
-    \item Automatic calls to resource management functions (bound to a resource lifetime)
-    \item New extension to Hindley-Milner-style type systems
+    \only<1,2>{\item Parametric polymorphism}
+    \only<2> {
+      \begin{itemize}
+        \item Types: ${\color{magenta} \mathtt{bits32}}, {\color{orange} \alpha \to \beta}, {\color{purple} \forall a . a}$
+        \vfill
+        \item Type variables
+        \begin{itemize}
+          \item Free (unbound): $\forall a . a \to {\color{magenta} \alpha}$
+          
+          {\color{gray} can be later \emph{substituted} with a different type}
+          \item Bound: $\forall {\color{magenta} a} . {\color{magenta} a} \to {\color{magenta} a}$ (\texttt{id} function)
+          
+          {\color{gray} can be instantiated into multiple types according to the given context}
+        \end{itemize}
+        \item Type constructors
+        \begin{itemize}
+          \item Functions: $\tau\ {\color{magenta} \to}\ \sigma$
+          \item Type constants: ${\color{magenta} \mathtt{bits32}}, {\color{orange} \mathtt{bool}}$
+          \item Product types, sum types, and their combination
+        \end{itemize}
+      \end{itemize}
+    }
+    \only<1,3>{\item Multi-parameter typeclasses: overloading constrained by a relation}
+    \only<3>{
+      \begin{itemize}
+        \item Multi-parameter typeclass: a relation over some types (represented by type variables)
+        
+        \li{class Name a b c}: a type class over types $a, b, c$
+
+        \li{instance Name bits32 bits32 bits64}: a type class instance given by $[a := \mathtt{bits32}, b := \mathtt{bits32}, c := \mathtt{bits64}]$
+
+        \vfill
+
+        \item Typeclass method: a function defined under the given typeclass, their type defined via the type variables of the enclosing typeclass
+        
+        \li{m :: (a, b) -> c}: a method with the argument $(a, b)$ returning $c$
+
+        The \li{instance Name bits32 bits32 bits64} instance then contains the definition of the instance of $\mathtt{m}$ with the typing $(\mathtt{bits32}, \mathtt{bits32}) \to \mathtt{bits64}$
+
+        \vfill
+        \item Functional dependencies: \li{class Name a b c | a b -> c} - specifies that, for any instance, each pair $a, b$ uniquely determines $c$ (we can deduce it)
+      \end{itemize}
+    }
+    \only<1,4>{\item Automatic calls to resource management functions (bound to a resource lifetime) }
+    \only<4>{
+      \begin{itemize}
+        \item Closely related to the language's semantics, here we assume C-{}-: a scope is defined by a function activation (from the function entry to one of the corresponding exits); as customary, we tie a resource liverange to a scope
+        \item Resource management actions performed by the user-definable \li{drop} functions
+
+        \begin{itemize}
+          \item usually overloaded in a \li{Drop} class so that every object issues a different action
+        \end{itemize}
+
+        \item resource-representing objects defined in \li{stackdata \{ ... \}} blocks
+        
+        \li{new Name: someType;} \hfill this defines a pointer \li{Name} to a stack-allocated object of \li{someType}
+
+        \vfill
+        \item Automatically inserted calls to the \li{drop} function at function exits (\li{return}s)
+        \begin{itemize}
+          \item Unless such exit follows a \li{dropped} statement that takes the name of the resource object
+          \item In C++, for example, scopes with multiple exit points are the minority
+        \end{itemize}
+      \end{itemize}
+    }
+    \only<1,5>{\item New subtype extension to Hindley-Milner-style type systems }
+    \only<5>{
+      \begin{itemize}
+        \item Many systems programming languages have subtypes (\li{const}, \li{constexpr}, etc.)
+        \item In the extended C-{}-: \emph{kinds} and \emph{costnesses}
+        \item Kind: a set of registers a value can be stored on
+        \item Constness: specifies when the value is to be computed
+        \begin{itemize}
+          \item compile-time
+          \item link-time
+          \item run-time
+        \end{itemize}
+        \item Each HM-style type is extended with a kind dimension and a constness dimension
+        \item Type (in-)nequalities can be specific to a dimension
+        \item Different types can have a defined inequality relation in each dimension and yet be incomparable
+        \item \xxx{probly next slide: jaky tam byly problemy - jaky sou limity takovyho navrhu, co nejde, co jde}
+      \end{itemize}
+    }
   \end{itemize}
 \end{frame}
 
@@ -109,13 +193,12 @@
     \item embedded systems
   \end{itemize}
 
-  Common characteristics:
+  Some common characteristics:
 
   \begin{itemize}
     \item Strict requirements on resource usage: power, time, performance, efficiency, etc.
-    \item Reliability and errorlessness
+    \item Reliability and correctness
     \item Maintainability
-    \item \xxx{go on}
   \end{itemize}
 \end{frame}
 
@@ -128,7 +211,7 @@
       \item Multi-parameter typeclasses with functional dependencies (type functions)
     \end{itemize}
     \item Support for automatic resource management
-    \item Type system coverage of subtypes (C \lstinline{const}, \lstinline{volatile})
+    \item Type system coverage of subtypes (C \li{const}, \li{volatile})
     \item Extensibility with more advanced type features (e.g. existentials)
   \end{itemize}
 \end{frame}
@@ -146,9 +229,6 @@
 \end{frame}
 
 \begin{frame}{detaily implementace (asi 4 slajdy)}
-\end{frame}
-
-\begin{frame}{najschlee}
 \end{frame}
 
 % if your approach idea can be made this simple, use a standout slide
