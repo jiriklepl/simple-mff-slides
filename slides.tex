@@ -193,27 +193,39 @@
     \item embedded systems
   \end{itemize}
 
-  Some common characteristics:
+  Some common requirements on such languages:
 
   \begin{itemize}
-    \item Strict requirements on resource usage: power, time, performance, efficiency, etc.
-    \item Reliability and correctness
-    \item Maintainability
+    \item {\only<2>\color{cyan} Limited resource usage: power, time, performance, efficiency, memory, etc. }
+    \item {\only<2>\color{cyan} Reliability}
+    \item {\only<2>\color{green}correctness
+    \item Maintainability}
   \end{itemize}
 \end{frame}
 
 \begin{frame}{Our starting point}
-  The previous work showed possible benefits of combining a procedural language and a Hindley-Milner-style type system, it lacked: (\xxx{make it a bad color})
-
-  \begin{itemize}
-    \item Type inference of record fields
+  The previous work showed possible benefits of combining the procedural language C and a Hindley-Milner-style type system,
+  \only<1>{ it solved:
     \begin{itemize}
-      \item Multi-parameter typeclasses with functional dependencies (type functions)
+      \item[\color{green} \faCheck] Modelling a subset of the C language in an extension of HM-style type system with type constructors for record types
+      \item[\color{green} \faCheck] Type inference and type-checking
+      \item[\color{green} \faCheck] Ad-hoc overloading via typeclasses
+      \item[\color{green} \faCheck] Generation of monomorphized code
     \end{itemize}
-    \item Support for automatic resource management
-    \item Type system coverage of subtypes (C \li{const}, \li{volatile})
-    \item Extensibility with more advanced type features (e.g. existentials)
-  \end{itemize}
+  }
+  \only<2>{ it lacked:
+
+    \begin{itemize}
+      \item[\color{red} \faTimes] Type inference of record fields
+      \begin{itemize}
+        \item[-] Multi-parameter typeclasses with functional dependencies (type functions)
+      \end{itemize}
+      \item[\color{red} \faTimes] Support for automatic resource management
+      \item[\color{red} \faTimes] Type system coverage of subtypes (C \li{const}, C++ \li{constexpr})
+      \item[\color{red} \faTimes] Extensibility with more advanced type features (e.g. existentials)
+      \item[\color{red} \faTimes] Assembly code generation
+    \end{itemize}
+  }
 \end{frame}
 
 \begin{frame}{rozdil c-{}- a c}
