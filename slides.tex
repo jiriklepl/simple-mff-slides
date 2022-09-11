@@ -9,12 +9,10 @@
 \usepackage{lmodern}
 \usepackage{xcolor}
 
-\usepackage{tikz}\usetikzlibrary{positioning} %remove if not using diagrams
-\usepackage{listings} %remove this if you don't need code listings
-\usepackage{fontawesome5} %remove this if you don't use "good/bad" lists and nice icons
+\usepackage{tikz}\usetikzlibrary{positioning}
+\usepackage{listings}
+\usepackage{fontawesome5}
 
-% Styling. Highly recommend using the metropolis theme, which has many small
-% `features' that help a lot with readability and comprehensibility.
 \usetheme{metropolis}
 
 % Careful with the colors!
@@ -25,21 +23,89 @@
 %\setbeamercolor{palette primary}{bg=green!50!yellow!80!black}
 
 \usepackage{FiraSans}
-% some other font packages:
-%\usepackage[defaultsans]{droidsans}
-%\usepackage[sfdefault]{cabin}
-%\usepackage[math]{iwona}
-%\usepackage[sfdefault,light]{roboto}
 
 \author{Jiří Klepl}
-\title{Inference-driven resource managemenent and polymorphism in systems programming} %really change this!
+\title{Inference-driven resource managemenent and polymorphism in systems programming}
 \date{MFF UK, September 2022}
 
 \newcommand{\xxx}[1]{\textcolor{red!}{#1}}
 \newcommand{\li}[1]{\lstinline{#1}}
+\def\cmm{\texttt{C-\relax-}}
+\def\smll{\scriptsize}
 
 \begin{document}
 \maketitle
+
+\begin{frame}{High-level languages and systems programming}
+\textbf{General motivating problem:}\\
+Coding low-level systems in simple languages is laborous and error-prone.
+
+\vspace{5ex}
+\begin{columns}
+\begin{column}{.5\linewidth}
+Desirable language features:
+\begin{itemize}\scriptsize
+\item \textbf{Good generics} to prevent repetition
+\item \textbf{Deep typechecking} to prevent errors
+\item \textbf{Type inference} to reduce redundant annotations
+\item \textbf{Readable syntax} to prevent obscurity
+\item \textbf{Resource management} for runtime correctness
+\item \textbf{No unnecessary overhead} to allow use with limited resources
+\end{itemize}
+\end{column}\pause
+\begin{column}{.5\linewidth}
+Language development examples:
+  \begin{itemize}\scriptsize
+  \item New features of C++
+  \item Rust
+  \item Nim, Clean, \dots
+  \item Ivory (embedded in Haskell)
+  \item C verified by Isabelle/HOL (SeL4 kernel)
+  \end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Previously in a bachelor thesis: CHM}
+\begin{columns}
+\begin{column}{.5\linewidth}
+  \begin{itemize}\small
+  \item[\color{blue!66}\faArrowRight] ``C with type inference'' \\{\smll\dots based on \alert<3>{Hindley-Damas-Milner system}\par}
+  \item[\color{blue!66}\faArrowRight] Overloading and generics \\ via typeclasses
+  \item[\color{blue!66}\faArrowRight] Monomorphization \\{\smll(similar to C++ template instantiation)\par}
+  \end{itemize}
+\end{column}\pause
+\begin{column}{.5\linewidth}
+  \begin{itemize}\small
+  \item[\color{red}\faTimes] Poor inference of \\ \texttt{struct} member access \\ {\smll(What is the type of \texttt{.some\_member} ?)\par}
+  \item[\color{red}\faTimes] No support for resource management
+  \item[\color{red}\faTimes] No subtypes \\{\smll (C \texttt{const}, implicit number conversions)\par}
+  \item[\color{red}\faTimes] Not much extensibility \\{\smll(e.g. existentials for run-time polymorphism)\par}
+  \item[\color{red}\faTimes] Code generation limited to C \\{\smll (No tail calls etc.)\par}
+  \end{itemize}
+\end{column}
+\end{columns}
+
+\vspace{3ex}
+\pause\textbf{Idea for this thesis:} Try a \alert{better type system} and see what happens.
+\end{frame}
+
+% TODO sem mozna hod slajd ve kterym je ukazka nejakyho CHM kodu, pripadne neco na cem ukazes nejakej problem
+
+\begin{frame}{Main results in this thesis}
+  \begin{itemize}
+  \item[\color{green!80!black}\faCheck] Substantial subset of \cmm{} (with tail calls!) + a compiler to LLVM
+  \item[\color{green!80!black}\faCheck] Extremely capable constraint-solver-based type system
+  \item Support for multiparameter typeclasses allows:
+    \begin{itemize}
+      \item[\color{green!80!black}\faCheck] modeling \texttt{struct} member access
+      \item[\color{green!80!black}\faCheck] resource management via \texttt{Drop} typeclass
+    \end{itemize}
+  \item[\color{green!80!black}\faCheck] Extensible subtype system (\cmm{} constness and data `kinds')
+  \end{itemize}
+\end{frame}
+
+% TODO sem hod slajd ve kterym sou 1-2 ukazky CHMMM kodu
 
 % Start with roughly 3 slides that work as an `abstract'. Give a totally brief
 % overview of what is the motivation for the thesis, how you approached it, and
@@ -184,56 +250,14 @@
   \url{https://github.com/jiriklepl/masters-thesis-code}
 \end{frame}
 
-\begin{frame}{proc}
-  Systems programming covers wide range of applications:
 
+\begin{frame}{Difference between C-{}- and C}
   \begin{itemize}
-    \item Operating systems and drivers
-    \item real-time mission-critical systems
-    \item embedded systems
-  \end{itemize}
-
-  Some common requirements on such languages:
-
-  \begin{itemize}
-    \item {\only<2>\color{cyan} Limited resource usage: power, time, performance, efficiency, memory, etc. }
-    \item {\only<2>\color{cyan} Reliability}
-    \item {\only<2>\color{green}correctness
-    \item Maintainability}
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{Our starting point}
-  The previous work showed possible benefits of combining the procedural language C and a Hindley-Milner-style type system,
-  \only<1>{ it solved:
+    \item C-{}- can showcase more advanced control-flow primitives
     \begin{itemize}
-      \item[\color{green} \faCheck] Modelling a subset of the C language in an extension of HM-style type system with type constructors for record types
-      \item[\color{green} \faCheck] Type inference and type-checking
-      \item[\color{green} \faCheck] Ad-hoc overloading via typeclasses
-      \item[\color{green} \faCheck] Generation of monomorphized code
+      \item Explicit tail-calls: \li{jump} statements, in contrast to \li{call} statements
     \end{itemize}
-  }
-  \only<2>{ it lacked:
-
-    \begin{itemize}
-      \item[\color{red} \faTimes] Type inference of record fields
-      \begin{itemize}
-        \item[-] Multi-parameter typeclasses with functional dependencies (type functions)
-      \end{itemize}
-      \item[\color{red} \faTimes] Support for automatic resource management
-      \item[\color{red} \faTimes] Type system coverage of subtypes (C \li{const}, C++ \li{constexpr})
-      \item[\color{red} \faTimes] Extensibility with more advanced type features (e.g. existentials)
-      \item[\color{red} \faTimes] Assembly code generation
-    \end{itemize}
-  }
-\end{frame}
-
-\begin{frame}{rozdil c-{}- a c}
-\end{frame}
-
-\begin{frame}{Multi-parameter type classes + proc}
-  \begin{itemize}
-    \item 
+    \item C-{}- has a simpler syntax
   \end{itemize}
 \end{frame}
 
@@ -260,28 +284,6 @@ From the availabe data (from other similar efforts), we can assume that:
 \item \alert<2>{More than 1 student will download and use the template}
 \item \alert<3>{More than 5 minutes of time will be saved.} \uncover<3>{Likely more.}
 \end{itemize}
-\end{frame}
-
-\section{Making the slides}
-% This is basically to say that you start talking about "details", name it as
-% you need it for your presentation
-
-\begin{frame}{Contents}
-The template is a normal metropolis-themed beamer document.
-
-Main focus:
-\begin{itemize}
-\item Focus on fast dive-in \pause
-  \begin{itemize}
-  \item Decreases the risk of not getting to the results
-  \item This is what presentations should look like, right? \pause
-  \end{itemize}
-\item Demo the common beamer tricks (pause, standout, \dots)
-\end{itemize}
-\end{frame}
-
-\begin{frame}[standout]{Remember!}
-Any slides may be improved by removing 50\% text \\ and adding 100\% more pictures!
 \end{frame}
 
 \begin{frame}{Demo: TikZ diagram}
