@@ -77,9 +77,9 @@ Language development examples:
 \end{column}\pause
 \begin{column}{.5\linewidth}
   \begin{itemize}\small
-  \item[\color{red}\faTimes] Poor inference of \\ \texttt{struct} member access \\ {\smll(What is the type of \texttt{.some\_member} ?)\par}
+  \item[\color{red}\faTimes] Poor inference of \\ \texttt{struct} member access \\ {\smll(What is the type of \li{.some\_member} ?)\par}
   \item[\color{red}\faTimes] No support for resource management
-  \item[\color{red}\faTimes] No subtypes \\{\smll (C \texttt{const}, implicit number conversions)\par}
+  \item[\color{red}\faTimes] No subtypes \\{\smll (C \li{const}, implicit number conversions)\par}
   \item[\color{red}\faTimes] Not much extensibility \\{\smll(e.g. existentials for run-time polymorphism)\par}
   \item[\color{red}\faTimes] Code generation limited to C \\{\smll (No tail calls etc.)\par}
   \end{itemize}
@@ -94,12 +94,13 @@ Language development examples:
 
 \begin{frame}{Main results in this thesis}
   \begin{itemize}
-  \item[\color{green!80!black}\faCheck] Substantial subset of \cmm{} (with tail calls!) + a compiler to LLVM
-  \item[\color{green!80!black}\faCheck] Extremely capable constraint-solver-based type system
+  \item[\color{green!80!black}\faCheck] Substantial subset of \cmm{} and LLVM assembly output
+  \item[\color{green!80!black}\faCheck] Reduction of code repetition via generics
+  \item[\color{green!80!black}\faCheck] Type system capable of sufficient type checking and type inference
   \item Support for multiparameter typeclasses allows:
     \begin{itemize}
-      \item[\color{green!80!black}\faCheck] modeling \texttt{struct} member access
-      \item[\color{green!80!black}\faCheck] resource management via \texttt{Drop} typeclass
+      \item[\color{green!80!black}\faCheck] Modeling \li{struct} member access
+      \item[\color{green!80!black}\faCheck] Resource management via \li{Drop} typeclass, which defines the \li{drop} function
     \end{itemize}
   \item[\color{green!80!black}\faCheck] Extensible subtype system (\cmm{} constness and data `kinds')
   \end{itemize}
@@ -118,49 +119,9 @@ Language development examples:
 % I follow with a demonstration that shows how I would present and defend why I
 % developed this `template' slideshow.
 
-\begin{frame}{Goals}
+\begin{frame}{How we achieve these results}
   \begin{itemize}
-    \item Reduction of code repetition in systems programming
-    \item Type inference of variables and record fields
-    \item Automatic resource management
-    \item Tackling subtypes
-      \begin{itemize}
-        \item Many low-level languages have various \emph{constness} requirements (\li{constexpr}) on variables or some other requirements that are parallel to the types recognized by the languages
-      \end{itemize}
-  \end{itemize}
-  
-  \pause
-  
-  How do we achieve these goals?
-  
-  \pause
-  
-  \begin{itemize}
-    \item Parametric polymorphism (idea: ``linear'' type functions)
-    \item Multi-parameter typeclasses (overloading constrained by a relation)
-    \item Automatic calls to resource management functions (bound to a resource lifetime)
-    \item New extension to Hindley-Milner-style type systems
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{Proof-of-concept compiler}
-  \begin{enumerate}
-    \item Tokenization and parsing (\xxx{arrow} AST)
-    \item Flow and variable live-range analysis (\xxx{arrow} annotated AST and \xxx{some metadata})
-    \begin{itemize}
-      \color{olive}
-      \item Automatic resource management added to the AST
-    \end{itemize}
-    \item Constraint generation and AST elaboration
-    \item Type inference
-    \item Monomorphization and postprocessing of the elaborated AST according to the inferred types (name mangling, insertion of inferred types)
-    \item Assembly generation
-  \end{enumerate}
-\end{frame}
-
-\begin{frame}{\xxx{Focus: type inference}}
-  \begin{itemize}
-    \only<1,2>{\item Parametric polymorphism}
+    \only<1,2>{\item[\color{blue!66}\faArrowRight] Parametric polymorphism with definable type constructors}
     \only<2> {
       \begin{itemize}
         \item Types: ${\color{magenta} \mathtt{bits32}}, {\color{orange} \alpha \to \beta}, {\color{purple} \forall a . a}$
@@ -179,10 +140,11 @@ Language development examples:
           \item Functions: $\tau\ {\color{magenta} \to}\ \sigma$
           \item Type constants: ${\color{magenta} \mathtt{bits32}}, {\color{orange} \mathtt{bool}}$
           \item Product types, sum types, and their combination
+          \item \li{struct} definitions
         \end{itemize}
       \end{itemize}
     }
-    \only<1,3>{\item Multi-parameter typeclasses: overloading constrained by a relation}
+    \only<1,3>{\item[\color{blue!66}\faArrowRight] Multi-parameter typeclasses: overloading constrained by a relation}
     \only<3>{
       \begin{itemize}
         \item Multi-parameter typeclass: a relation over some types (represented by type variables)
@@ -203,7 +165,7 @@ Language development examples:
         \item Functional dependencies: \li{class Name a b c | a b -> c} - specifies that, for any instance, each pair $a, b$ uniquely determines $c$ (we can deduce it)
       \end{itemize}
     }
-    \only<1,4>{\item Automatic calls to resource management functions (bound to a resource lifetime) }
+    \only<1,4>{\item[\color{blue!66}\faArrowRight] Automatic calls to resource management functions (bound to a resource lifetime) }
     \only<4>{
       \begin{itemize}
         \item Closely related to the language's semantics, here we assume C-{}-: a scope is defined by a function activation (from the function entry to one of the corresponding exits); as customary, we tie a resource liverange to a scope
@@ -225,24 +187,70 @@ Language development examples:
         \end{itemize}
       \end{itemize}
     }
-    \only<1,5>{\item New subtype extension to Hindley-Milner-style type systems }
+    \only<1,5>{\item[\color{blue!66}\faArrowRight] New subtype extension to Hindley-Milner-style type systems }
     \only<5>{
       \begin{itemize}
         \item Many systems programming languages have subtypes (\li{const}, \li{constexpr}, etc.)
         \item In the extended C-{}-: \emph{kinds} and \emph{costnesses}
         \item Kind: a set of registers a value can be stored on
         \item Constness: specifies when the value is to be computed
-        \begin{itemize}
-          \item compile-time
-          \item link-time
-          \item run-time
-        \end{itemize}
+
+        compile-time, link-time, run-time
         \item Each HM-style type is extended with a kind dimension and a constness dimension
         \item Type (in-)nequalities can be specific to a dimension
+        
+        \xxx{obrazek}
         \item Different types can have a defined inequality relation in each dimension and yet be incomparable
         \item \xxx{probly next slide: jaky tam byly problemy - jaky sou limity takovyho navrhu, co nejde, co jde}
       \end{itemize}
     }
+  \end{itemize}
+\end{frame}
+
+
+\tikzstyle{bx}=[rectangle,draw,rounded corners=1ex,rotate=40]
+\tikzstyle{wv}=[out=-30, in=130, ->]
+\begin{frame}{Proof-of-concept compiler}
+\centering
+\begin{tikzpicture}[ultra thick, node distance=6em]
+\node[bx,color=orange!80!gray] (p) {Tokenize and parse};
+\node[bx,right=of p.center,anchor=center] (a) {Analyze flow};
+\node[bx,right=of a.center,anchor=center] (e) {Constraints \& elaborated AST};
+\node[bx,above=of e.center,xshift=2em,anchor=center,color=green!50!gray] (i) {Solve constraints};
+\node[bx,right=10em of i.center,anchor=center,color=red!50] (r) {Report errors};
+\node[bx,right=of e.center,anchor=center,color=green!50!gray] (m) {Monomorphize};
+\node[bx,right=of m.center,anchor=center,color=cyan!80!gray] (l) {Generate LLVM};
+\draw[->,out=0,in=130] ([xshift=-6em] p.center) to (p);
+\draw[wv] (p) to (a);
+\draw[wv] (a) to (e);
+\draw[wv] (e) to (m);
+\draw[->,out=100,in=-90] (e) to (i);
+\draw[<->,out=-45,in=90,color=green!50!gray] (i) to (m.north east);
+\draw[->,out=0,in=130,color=red!50] (i.south east) to (r);
+\draw[wv] (m) to (l);
+\draw[->,out=-30,in=180] (l) to ([xshift=6em] l.center);
+\end{tikzpicture}
+
+Compiler implemented in Haskell, uses \texttt{\color{cyan!80!gray}llvm-hs-pure} and \texttt{\color{orange!80!gray}megaparsec}; \textcolor{green!50!gray}{constraint-based type inference} is implemented natively.
+\end{frame}
+
+\begin{frame}{Tokenization and parsing}
+  \begin{itemize}
+    \item Use the \texttt{\color{orange!80!gray}megaparsec} library
+    \item Generate the AST extending the \cmm{} language syntax specification from:
+    
+    \url{https://www.cs.tufts.edu/~nr/c--/extern/man2.pdf}
+
+    In-code documentation clearly indicates all deviations from the standard so the implementation could be used for pure \cmm{}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Flow analysis - ``Flattening'' and ``Blockifying''}
+  \begin{itemize}
+    \item Splitting into basic-blocks - to facilitate flow analysis and LLVM generation
+    \item Generation of the control-flow graph for each function
+    \item Analysis of variable live-ranges inside the functions
+    \item Insertion of resource management calls to the \li{drop} function (similar to use of destructors)
   \end{itemize}
 \end{frame}
 
@@ -265,80 +273,6 @@ Language development examples:
 \end{frame}
 
 \begin{frame}{detaily implementace (asi 4 slajdy)}
-\end{frame}
-
-% if your approach idea can be made this simple, use a standout slide
-\begin{frame}[standout]{Main approach idea}
-Make example slides
-$\to$
-Put them on GitHub
-\end{frame}
-
-\begin{frame}{Results so far}
-The impact is not known, because I am uploading the slides today.
-
-\pause
-From the availabe data (from other similar efforts), we can assume that:
-\begin{itemize}
-% some extra beamer magic
-\item \alert<2>{More than 1 student will download and use the template}
-\item \alert<3>{More than 5 minutes of time will be saved.} \uncover<3>{Likely more.}
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Demo: TikZ diagram}
-\centering
-\tikzstyle{rec}=[rectangle, draw, rounded corners=1ex, font=\huge\bfseries]
-\begin{tikzpicture}[ultra thick, inner sep=1ex]
-\node[rec] (a) {Keep};
-\node[rec, circle, right=of a] (b) {it};
-\node[rec, right=of b] (c) {simple};
-\node[rec, densely dotted, below=2cm of c, font=\small] (notice) {\dots{}but precise!};
-\draw[->] (a) to (b);
-\draw[->] (b) to (c);
-\draw[dotted] (notice) to (c);
-\end{tikzpicture}
-\end{frame}
-
-\begin{frame}[fragile]{Demo: including formatted source}
-% the fragile modifier (above) may be needed with many kinds of verbatim
-% environments, also with lstlistings etc.
-
-\begin{lstlisting}[language=C,showstringspaces=false,basicstyle=\tt\small,commentstyle=\color{green!50!black},keywordstyle=\bfseries\color{blue!50!black},stringstyle=\color{red!50!black}]
-int main() {
-  printf("The answer is: %d\n", 6*7); //actually 6*9
-  return 0; //no chance this didn't succeed
-}
-\end{lstlisting}
-\end{frame}
-
-\begin{frame}{Demo: showing a picture with detailed results}
-\centering
-\includegraphics[height=0.8\textheight]{img/ukazka-obr01.pdf}
-\end{frame}
-
-\begin{frame}{Demo: showing something with comments}
-\begin{columns}
-\begin{column}{0.5\textwidth}
-\includegraphics[width=\linewidth]{img/ukazka-obr01.pdf}
-\end{column}
-\begin{column}{0.5\textwidth}
-How we arrived at this?
-\begin{enumerate}
-\item Generated the data
-\item Plotted them
-\item Used a very fine red marker to circle the points
-\end{enumerate}
-
-`Advantages' demo:
-
-\begin{itemize}
-\item[\color{green}\faCheck] Data is normal
-\item[\color{red}\faTimes] Data is sparse
-\item[\color{violet}\faQuestionCircle] What now?
-\end{itemize}
-\end{column}
-\end{columns}
 \end{frame}
 
 % Ending frame is important -- in the rare case that you actually manage to
