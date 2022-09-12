@@ -75,11 +75,11 @@ Language development examples:
   \item[\color{blue!66}\faArrowRight] Overloading and generics \\ via typeclasses
   \item[\color{blue!66}\faArrowRight] Monomorphization \\{\smll(similar to C++ template instantiation)\par}
   \end{itemize}
-\end{column}\pause
+\end{column}\pause%
 \begin{column}{.5\linewidth}
   \begin{itemize}\small
   \item[\color{red}\faTimes] Poor inference of \\ \texttt{struct} member access \\ {\smll(What is the type of \li{.some\_member} ?)\par}
-  \item[\color{red}\faTimes] No support for resource management
+  \item[\color{red}\faTimes] No support for resource management \\{\smll(e.g. locks have to be unlocked, files closed)\par}
   \item[\color{red}\faTimes] No subtypes \\{\smll (C \li{const}, implicit number conversions)\par}
   \item[\color{red}\faTimes] Not much extensibility \\{\smll(e.g. existentials for run-time polymorphism)\par}
   \item[\color{red}\faTimes] Code generation limited to C 
@@ -91,13 +91,46 @@ Language development examples:
 \pause\textbf{Idea for this thesis:} Try a \alert{better type system} and see what happens.
 \end{frame}
 
-% TODO sem mozna hod slajd ve kterym je ukazka nejakyho CHM kodu, pripadne neco na cem ukazes nejakej problem
+\begin{frame}[fragile]{CHM record fields}
+\begin{columns}
+  \begin{column}{.5\linewidth}
+    \begin{lstlisting}[basicstyle=\scriptsize\ttfamily]
+/* CHM required explicit type
+   variable declarations like C++
+*/
+<a>
+void access(a *s) {
+  // what type is this:
+  s->field;
+}
+    \end{lstlisting}
+  \end{column}%
+  \begin{column}{.5\linewidth}
+    CHM (previous work) solution:
+    \begin{itemize}\small
+      \item All fields of the same name have to share the same type:
+
+      
+      \lstinline|struct A { int field; };|\\
+      \lstinline|struct B { ... field; };|
+
+      The type in \li{B} required to be \li{int} too
+
+      \item[\color{red}\faTimes] Field types are still not inferred
+      \item Field access is $\mathtt{struct} \to \mathtt{field}$
+      \item We want to overload in both types, and for a given \li{struct}, we want the \li{field} type be unique
+      
+      \faArrowRight~ multi-parameter typeclasses with functional dependencies (MPTCs)
+    \end{itemize}
+  \end{column}
+\end{columns}
+\end{frame}
 
 \begin{frame}{Main results in this thesis}
   \begin{itemize}
   \item[\color{green!80!black}\faCheck] Substantial subset of \cmm{} and LLVM assembly output
   \item[\color{green!80!black}\faCheck] Reduction of code repetition via generics
-  \item[\color{green!80!black}\faCheck] Capable constra Type system capable of sufficient type checking and type inference
+  \item[\color{green!80!black}\faCheck] Capable constraint-solver-based type system
   \item Support for multiparameter typeclasses allows:
     \begin{itemize}
       \item[\color{green!80!black}\faCheck] Modeling \li{struct} member access
@@ -105,6 +138,17 @@ Language development examples:
     \end{itemize}
   \item[\color{green!80!black}\faCheck] Extensible subtype system (\cmm{} constness and data `kinds')
   \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \centering
+  An example of using generics:
+  \begin{columns}
+    \begin{column}{.5\linewidth}\small
+    \end{column}%
+    \begin{column}{.5\linewidth}\small
+    \end{column}
+  \end{columns}
 \end{frame}
 
 % TODO sem hod slajd ve kterym sou 1-2 ukazky CHMMM kodu
@@ -377,8 +421,11 @@ You can try the results on GitHub: \\
 
 \begin{frame}{Backwards-compatibility and extensibility of other languages' type systems}
   \begin{itemize}
-    \item Extended \cmm{} is not fully backwards-compatible with \cmm{} as it uses stronger type system
-    \item Compiling \cmm{} programs would be possible with adding some type coercions
+    \item The extended \cmm{} is not fully backwards-compatible with \cmm{} as it uses stronger type system
+    \begin{itemize}
+      \item Compiling \cmm{} programs would be possible with adding some type coercions
+      \item \cmm{} programs are not meant to be portable between implementations anyway
+    \end{itemize}
     \item The type system as explained in the thesis does not fit dynamic languages like Python, JavaScript or Julia without significantly restricting such languages
     \begin{itemize}
       \item Extending the type system with existentials as discussed in the thesis would make modelling such languages easier -- however, still not complete
