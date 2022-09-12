@@ -11,7 +11,7 @@
 
 \usepackage{tikz}\usetikzlibrary{positioning}
 \usepackage{listings}
-\usepackage{fontawesome5}
+\usepackage{fontawesome}
 
 \usetheme{metropolis}
 
@@ -36,6 +36,8 @@
 \begin{document}
 \maketitle
 
+\section{Introduction}
+
 \begin{frame}{High-level languages and systems programming}
 \textbf{General motivating problem:}\\
 Coding low-level systems in simple languages is laborous and error-prone.
@@ -57,8 +59,7 @@ Desirable language features:
 Language development examples:
   \begin{itemize}\scriptsize
   \item New features of C++
-  \item Rust
-  \item Nim, Clean, \dots
+  \item Rust, Nim, D, Swift, \dots
   \item Ivory (embedded in Haskell)
   \item C verified by Isabelle/HOL (SeL4 kernel)
   \end{itemize}
@@ -81,7 +82,7 @@ Language development examples:
   \item[\color{red}\faTimes] No support for resource management
   \item[\color{red}\faTimes] No subtypes \\{\smll (C \li{const}, implicit number conversions)\par}
   \item[\color{red}\faTimes] Not much extensibility \\{\smll(e.g. existentials for run-time polymorphism)\par}
-  \item[\color{red}\faTimes] Code generation limited to C \\{\smll (No tail calls etc.)\par}
+  \item[\color{red}\faTimes] Code generation limited to C 
   \end{itemize}
 \end{column}
 \end{columns}
@@ -96,7 +97,7 @@ Language development examples:
   \begin{itemize}
   \item[\color{green!80!black}\faCheck] Substantial subset of \cmm{} and LLVM assembly output
   \item[\color{green!80!black}\faCheck] Reduction of code repetition via generics
-  \item[\color{green!80!black}\faCheck] Type system capable of sufficient type checking and type inference
+  \item[\color{green!80!black}\faCheck] Capable constra Type system capable of sufficient type checking and type inference
   \item Support for multiparameter typeclasses allows:
     \begin{itemize}
       \item[\color{green!80!black}\faCheck] Modeling \li{struct} member access
@@ -107,6 +108,27 @@ Language development examples:
 \end{frame}
 
 % TODO sem hod slajd ve kterym sou 1-2 ukazky CHMMM kodu
+
+\begin{frame}{Difference between \cmm{} and \texttt{C}}
+  \begin{itemize}
+    \item Non-extended \cmm{} has very primitive type system
+    \begin{itemize}
+      \item However, with subtypes that affect register allocation and `constness' of variables
+    \end{itemize} 
+    \item \cmm{} contains advanced control-flow primitives
+    \begin{itemize}
+      \item Explicit tail-calls: \li{jump} statements, contrasting \li{call} statements
+      \item Interprocedural equivalents to \li{goto} statements: \li{cut to} statements
+    \end{itemize}
+    \item \cmm{} has a simpler structure, for example:
+    \begin{itemize}
+      \item No \li{while} and \li{for} loops
+      \item The whole function is one scope, variable declarations hoisted
+      \item Expressions have no side-effects
+    \end{itemize}
+    \item \cmm{} allows for various alignment and aliasing assertions
+  \end{itemize}
+\end{frame}
 
 % Start with roughly 3 slides that work as an `abstract'. Give a totally brief
 % overview of what is the motivation for the thesis, how you approached it, and
@@ -119,94 +141,7 @@ Language development examples:
 % I follow with a demonstration that shows how I would present and defend why I
 % developed this `template' slideshow.
 
-\begin{frame}{How we achieve these results}
-  \begin{itemize}
-    \only<1,2>{\item[\color{blue!66}\faArrowRight] Parametric polymorphism with definable type constructors}
-    \only<2> {
-      \begin{itemize}
-        \item Types: ${\color{magenta} \mathtt{bits32}}, {\color{orange} \alpha \to \beta}, {\color{purple} \forall a . a}$
-        \vfill
-        \item Type variables
-        \begin{itemize}
-          \item Free (unbound): $\forall a . a \to {\color{magenta} \alpha}$
-          
-          {\color{gray} can be later \emph{substituted} with a different type}
-          \item Bound: $\forall {\color{magenta} a} . {\color{magenta} a} \to {\color{magenta} a}$ (\texttt{id} function)
-          
-          {\color{gray} can be instantiated into multiple types according to the given context}
-        \end{itemize}
-        \item Type constructors
-        \begin{itemize}
-          \item Functions: $\tau\ {\color{magenta} \to}\ \sigma$
-          \item Type constants: ${\color{magenta} \mathtt{bits32}}, {\color{orange} \mathtt{bool}}$
-          \item Product types, sum types, and their combination
-          \item \li{struct} definitions
-        \end{itemize}
-      \end{itemize}
-    }
-    \only<1,3>{\item[\color{blue!66}\faArrowRight] Multi-parameter typeclasses: overloading constrained by a relation}
-    \only<3>{
-      \begin{itemize}
-        \item Multi-parameter typeclass: a relation over some types (represented by type variables)
-        
-        \li{class Name a b c}: a type class over types $a, b, c$
-
-        \li{instance Name bits32 bits32 bits64}: a type class instance given by $[a := \mathtt{bits32}, b := \mathtt{bits32}, c := \mathtt{bits64}]$
-
-        \vfill
-
-        \item Typeclass method: a function defined under the given typeclass, their type defined via the type variables of the enclosing typeclass
-        
-        \li{m :: (a, b) -> c}: a method with the argument $(a, b)$ returning $c$
-
-        The \li{instance Name bits32 bits32 bits64} instance then contains the definition of the instance of $\mathtt{m}$ with the typing $(\mathtt{bits32}, \mathtt{bits32}) \to \mathtt{bits64}$
-
-        \vfill
-        \item Functional dependencies: \li{class Name a b c | a b -> c} - specifies that, for any instance, each pair $a, b$ uniquely determines $c$ (we can deduce it)
-      \end{itemize}
-    }
-    \only<1,4>{\item[\color{blue!66}\faArrowRight] Automatic calls to resource management functions (bound to a resource lifetime) }
-    \only<4>{
-      \begin{itemize}
-        \item Closely related to the language's semantics, here we assume C-{}-: a scope is defined by a function activation (from the function entry to one of the corresponding exits); as customary, we tie a resource liverange to a scope
-        \item Resource management actions performed by the user-definable \li{drop} functions
-
-        \begin{itemize}
-          \item usually overloaded in a \li{Drop} class so that every object issues a different action
-        \end{itemize}
-
-        \item resource-representing objects defined in \li{stackdata \{ ... \}} blocks
-        
-        \li{new Name: someType;} \hfill this defines a pointer \li{Name} to a stack-allocated object of \li{someType}
-
-        \vfill
-        \item Automatically inserted calls to the \li{drop} function at function exits (\li{return}s)
-        \begin{itemize}
-          \item Unless such exit follows a \li{dropped} statement that takes the name of the resource object
-          \item In C++, for example, scopes with multiple exit points are the minority
-        \end{itemize}
-      \end{itemize}
-    }
-    \only<1,5>{\item[\color{blue!66}\faArrowRight] New subtype extension to Hindley-Milner-style type systems }
-    \only<5>{
-      \begin{itemize}
-        \item Many systems programming languages have subtypes (\li{const}, \li{constexpr}, etc.)
-        \item In the extended C-{}-: \emph{kinds} and \emph{costnesses}
-        \item Kind: a set of registers a value can be stored on
-        \item Constness: specifies when the value is to be computed
-
-        compile-time, link-time, run-time
-        \item Each HM-style type is extended with a kind dimension and a constness dimension
-        \item Type (in-)nequalities can be specific to a dimension
-        
-        \xxx{obrazek}
-        \item Different types can have a defined inequality relation in each dimension and yet be incomparable
-        \item \xxx{probly next slide: jaky tam byly problemy - jaky sou limity takovyho navrhu, co nejde, co jde}
-      \end{itemize}
-    }
-  \end{itemize}
-\end{frame}
-
+\section{Compiler}
 
 \tikzstyle{bx}=[rectangle,draw,rounded corners=1ex,rotate=40]
 \tikzstyle{wv}=[out=-30, in=130, ->]
@@ -245,34 +180,183 @@ Compiler implemented in Haskell, uses \texttt{\color{cyan!80!gray}llvm-hs-pure} 
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Flow analysis - ``Flattening'' and ``Blockifying''}
+\begin{frame}{Flow analysis -- ``Flattening'' and ``Blockifying''}
   \begin{itemize}
-    \item Splitting into basic-blocks - to facilitate flow analysis and LLVM generation
+    \item Splitting into basic-blocks -- to facilitate flow analysis and LLVM generation
     \item Generation of the control-flow graph for each function
     \item Analysis of variable live-ranges inside the functions
     \item Insertion of resource management calls to the \li{drop} function (similar to use of destructors)
   \end{itemize}
 \end{frame}
 
-\begin{frame}[standout]{Je to na githubu + vyzkouset}
-  \url{https://github.com/jiriklepl/masters-thesis-code}
-\end{frame}
-
-
-\begin{frame}{Difference between C-{}- and C}
+\begin{frame}{Constraint generation and AST elaboration}
   \begin{itemize}
-    \item C-{}- can showcase more advanced control-flow primitives
+    \item[\faSignIn] Input: the AST of the code
+    \vfill
+    \item[\faSignOut] Output
     \begin{itemize}
-      \item Explicit tail-calls: \li{jump} statements, in contrast to \li{call} statements
+      \item List of constraints to be solved
+      \item The elaborated AST
     \end{itemize}
-    \item C-{}- has a simpler syntax
+
+    \item The constraints capture the desired type semantics of the code
+    \item Example (simplified):
+    
+    $$x = a + b;$$
+    
+    \begin{itemize}
+      \item $x : \alpha;\ a : \beta;\ b : \gamma;\ a + b : \delta;$ \hfill AST elaborations
+      \item $\texttt{Num}\ \delta$ \hfill the result belongs to the \texttt{Num} typeclass (which defines (+))
+      \item $\beta \sim \delta; \gamma \sim \delta$ \hfill arguments have the type of the result
+      \item $\alpha \sim \delta$ \hfill the assignee and the result share the type
+    \end{itemize}
   \end{itemize}
 \end{frame}
 
-\begin{frame}{proc to je slozity}
+\begin{frame}{Constraint solving}
+  \begin{itemize}
+    \item[\faSignIn] Input: list of constraints the types have to satisfy
+    
+    For example:
+    \begin{itemize}
+      \item Equality constraint $\tau_1 \sim \tau_2$ \hfill types $\tau_1, \tau_2$ have to be the same
+      \item Class constraint $C \tau$ \hfill the type $\tau$ has to belong to the typeclass $C$ 
+    \end{itemize} 
+    \item[\faSignOut] Output: assignments of type variables to concrete types, leftover constraints
+    \item We can combine the constraints $C_1, C_2$ (conjunction) $$C_1, C_2$$
+    \item And nest the constraint $C$ while binding certain type variables $a, b$ and providing local assumptions $A$ $$\forall a, b . A \Rightarrow C$$
+  \end{itemize}
 \end{frame}
 
-\begin{frame}{detaily implementace (asi 4 slajdy)}
+\begin{frame}{Monomorphization}
+  \begin{itemize}
+    \item[\faSignIn] Input: AST elaborated with the inferred (poly-)types
+    \item[\faSignOut] Output: monomorphized AST elaborated with monotypes
+    \item {\color{green!80!black} Mono}morphization = replacing {\color{orange} poly}morphic definitions with copies with the intended {\color{green!80!black} mono}types
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{LLVM generation}
+  \begin{itemize}
+    \item[\faSignIn] Input: monomorphized AST
+    \begin{itemize}
+      \item Elaborated with monotypes
+      \item Elaborated with basic-block structure
+      \item Control-flow and variable liveranges in relation to basic-blocks
+    \end{itemize} 
+    \item[\faSignOut] Output: the LLVM assembly
+    \item Regular variables translated into LLVM registers
+    \item Each local stack-object \li{alloca}'ted at function entry
+    \item Translating each basic block separately
+    \begin{itemize}
+      \item[\only<1,3>{\faChevronRight}\only<2>{\faChevronDown}] Variables assigned-to by other basic blocks (or itself) imported via \underline{$\phi$-nodes}
+      \only<2>{
+        \begin{itemize}
+          \item Located at the basic block entry
+          \item For each variable that has to be {\color{green!80!black} alive}
+          \item Each $\phi$-node takes all the possible values of the imported variables
+          \item The values accompanied with the corresponding exporting basic-block labels
+        \end{itemize}
+      }
+      \item[\only<1,2>{\faChevronRight}\only<3>{\faChevronDown}] Mapping variables to the current values while translating the inner statements
+      \only<3>{
+        \begin{itemize}
+          \item Each statement can change this mapping
+          \item This mapping then taken as the basic block's export
+        \end{itemize}
+      }
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\section{Details about the type system}
+
+\begin{frame}{Type system details}
+  \begin{itemize}
+    \only<1,2>{\item[\color{cyan}\only<1>{\faChevronRight}\only<2>{\faChevronDown}] Parametric polymorphism with definable type constructors}
+    \only<2> {
+      \begin{itemize}
+        \item Types: ${\color{magenta} \mathtt{bits32}}, {\color{orange} \alpha \to \beta}, {\color{purple} \forall a . a}$
+        \vfill
+        \item Type variables
+        \begin{itemize}
+          \item Free (unbound): $\forall a . a \to {\color{magenta} \alpha}$
+          
+          {\color{gray} can be later \emph{substituted} with a different type}
+          \item Bound: $\forall {\color{magenta} a} . {\color{magenta} a} \to {\color{magenta} a}$ (\texttt{id} function)
+          
+          {\color{gray} can be instantiated into multiple types according to the given context}
+        \end{itemize}
+        \item Type constructors
+        \begin{itemize}
+          \item Functions: $\tau\ {\color{magenta} \to}\ \sigma$
+          \item Type constants: ${\color{magenta} \mathtt{bits32}}, {\color{orange} \mathtt{bool}}$
+          \item Product types, sum types, and their combination
+          \item \li{struct} definitions
+        \end{itemize}
+      \end{itemize}
+    }
+    \only<1,3>{\item[\color{green!80!black}\only<1>{\faChevronRight}\only<3>{\faChevronDown}] Multi-parameter typeclasses: overloading constrained by a relation}
+    \only<3>{
+      \begin{itemize}
+        \item Multi-parameter typeclass: a relation over some types (represented by type variables)
+        
+        \li{class Name a b c}: a type class over types $a, b, c$
+
+        \li{instance Name bits32 bits32 bits64}: a type class instance given by $[a := \mathtt{bits32}, b := \mathtt{bits32}, c := \mathtt{bits64}]$
+
+        \vfill
+
+        \item Typeclass method: a function defined under the given typeclass, their type defined via the type variables of the enclosing typeclass
+        
+        \li{m :: (a, b) -> c}: a method with the argument $(a, b)$ returning $c$
+
+        The \li{instance Name bits32 bits32 bits64} instance then contains the definition of the instance of $\mathtt{m}$ with the typing $(\mathtt{bits32}, \mathtt{bits32}) \to \mathtt{bits64}$
+
+        \vfill
+        \item Functional dependencies: \li{class Name a b c | a b -> c} - specifies that, for any instance, each pair $a, b$ uniquely determines $c$ (we can deduce it)
+      \end{itemize}
+    }
+    \only<1,4>{\item[\color{orange}\only<1>{\faChevronRight}\only<4>{\faChevronDown}] Automatic calls to resource management functions (bound to a resource lifetime) }
+    \only<4>{
+      \begin{itemize}
+        \item Closely related to the language's semantics, here we assume \cmm{}: a scope is defined by a function activation (from the function entry to one of the corresponding exits); as customary, we tie a resource liverange to a scope
+        \item Resource management actions performed by the user-definable \li{drop} functions
+
+        \begin{itemize}
+          \item usually overloaded in a \li{Drop} class so that every object issues a different action
+        \end{itemize}
+
+        \item resource-representing objects defined in \li{stackdata \{ ... \}} blocks
+        
+        \li{new Name: someType;} \hfill this defines a pointer \li{Name} to a stack-allocated object of \li{someType}
+
+        \vfill
+        \item Automatically inserted calls to the \li{drop} function at function exits (\li{return}s)
+        \begin{itemize}
+          \item Unless such exit follows a \li{dropped} statement that takes the name of the resource object
+          \item In C++, for example, scopes with multiple exit points are the minority
+        \end{itemize}
+      \end{itemize}
+    }
+    \only<1,5>{\item[\color{purple!75!white}\only<1>{\faChevronRight}\only<5>{\faChevronDown}] New subtype extension to Hindley-Milner-style type systems }
+    \only<5>{
+      \begin{itemize}
+        \item Many systems programming languages have subtypes (\li{const}, \li{constexpr}, etc.)
+        \item In the extended \cmm{}: \emph{kinds} and \emph{costnesses}
+        \item Kind: a set of registers a value can be stored on
+        \item Constness: specifies when the value is to be computed
+
+        compile-time, link-time, run-time
+        \item Each HM-style type is extended with a kind dimension and a constness dimension
+        \item Type (in-)nequalities can be specific to a dimension
+        
+        \xxx{obrazek}
+        \item Different types can have a defined inequality relation in each dimension and yet be incomparable
+        \item \xxx{probly next slide: jaky tam byly problemy - jaky sou limity takovyho navrhu, co nejde, co jde}
+      \end{itemize}
+    }
+  \end{itemize}
 \end{frame}
 
 % Ending frame is important -- in the rare case that you actually manage to
@@ -283,8 +367,27 @@ Compiler implemented in Haskell, uses \texttt{\color{cyan!80!gray}llvm-hs-pure} 
 \centering
 {\Large\bfseries Thank you for attention!}
 
-% You can try the results on GitHub: \\
-% \url{https://github.com/exaexa/simple-mff-slides}
+You can try the results on GitHub: \\
+\url{https://github.com/jiriklepl/masters-thesis-code}
+
 
 \end{frame}
+
+\section{Questions}
+
+\begin{frame}{Backwards-compatibility and extensibility of other languages' type systems}
+  \begin{itemize}
+    \item Extended \cmm{} is not fully backwards-compatible with \cmm{} as it uses stronger type system
+    \item Compiling \cmm{} programs would be possible with adding some type coercions
+    \item The type system as explained in the thesis does not fit dynamic languages like Python, JavaScript or Julia without significantly restricting such languages
+    \begin{itemize}
+      \item Extending the type system with existentials as discussed in the thesis would make modelling such languages easier -- however, still not complete
+    \end{itemize}
+    \item The type system could be modified to fit the needs of a Rust-like language
+    \begin{itemize}
+      \item Successful implementation of Rust borrowing through type system would require the type system to be flow-sensitive
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
 \end{document}
