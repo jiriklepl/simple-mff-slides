@@ -33,6 +33,20 @@
 \def\cmm{\texttt{C-\relax-}}
 \def\smll{\scriptsize}
 
+
+\lstset{ % use this to define styling for any other language
+  language=C,
+  tabsize=2,
+  showstringspaces=false,
+  morekeywords={continuation,cut,to,foreign,dropped,bits32,bits64, class,instance,ptr,new,stackdata},
+  deletekeywords={while},
+  basicstyle=\footnotesize\tt\color{black!75},
+  identifierstyle=\bfseries\color{black},
+  commentstyle=\color{green!50!black},
+  stringstyle=\color{red!50!black},
+  keywordstyle=\color{blue!75!black}
+}
+
 \begin{document}
 \maketitle
 
@@ -48,11 +62,10 @@ Coding low-level systems in simple languages is laborous and error-prone.
 Desirable language features:
 \begin{itemize}\scriptsize
 \item \textbf{Good generics} to prevent repetition
-\item \textbf{Deep typechecking} to prevent errors
 \item \textbf{Type inference} to reduce redundant annotations
-\item \textbf{Readable syntax} to prevent obscurity
+\item \textbf{Deep typechecking} to prevent errors
 \item \textbf{Resource management} for runtime correctness
-\item \textbf{No unnecessary overhead} to allow use with limited resources
+\item[\color{red} \faTimes] \textbf{Unnecessary overhead}
 \end{itemize}
 \end{column}\pause
 \begin{column}{.5\linewidth}
@@ -98,10 +111,10 @@ Language development examples:
 /* CHM required explicit type
    variable declarations like C++
 */
-<a>
-void access(a *s) {
+<a : Has_x<a>>
+void access(a s) {
   // what type is this:
-  s->field;
+  s.x;
 }
     \end{lstlisting}
   \end{column}%
@@ -111,8 +124,8 @@ void access(a *s) {
       \item All fields of the same name have to share the same type:
 
       
-      \lstinline|struct A { int field; };|\\
-      \lstinline|struct B { ... field; };|
+      \lstinline|struct A { int x; };|\\
+      \lstinline|struct B { ... x; };|
 
       The type in \li{B} required to be \li{int} too
 
@@ -140,13 +153,44 @@ void access(a *s) {
   \end{itemize}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
   \centering
   An example of using generics:
   \begin{columns}
     \begin{column}{.5\linewidth}\small
+    \begin{lstlisting}
+// User-provided
+//   polymorphic definition
+add(auto x, auto y)
+{ return (x + y); }
+
+bits32 a1, b1; auto c1;
+a1 = 5; b1 = 10;
+c1 = add(b1, c1);
+
+bits64 a2, b2; auto c2;
+a2 = 5; b2 = 10;
+c2 = add(b2, c2);
+    \end{lstlisting}
     \end{column}%
     \begin{column}{.5\linewidth}\small
+    \begin{lstlisting}
+// Automatically generated
+//   monomorphic definitions
+_Madd_$f$Lb32...(bits32 x, bits32 y)
+{ return (x + y); }
+
+_Madd_$f$Lb64...(bits64 x, bits64 y)
+{ return (x + y); }
+
+bits32 a1, b1; bits32 c1;
+a1 = 5; b1 = 10;
+c1 = _Madd_$f$Lb32...(a1, b1);
+
+bits64 a2, b2; bits64 c2;
+a2 = 5; b2 = 10;
+c2 = _Madd_$f$Lb64...(a2, b2);
+    \end{lstlisting}
     \end{column}
   \end{columns}
 \end{frame}
@@ -285,7 +329,7 @@ Compiler implemented in Haskell, uses \texttt{\color{cyan!80!gray}llvm-hs-pure} 
     \item[\faSignIn] Input: monomorphized AST
     \begin{itemize}
       \item Elaborated with monotypes
-      \item Elaborated with basic-block structure
+      \item Split into basic-block structure
       \item Control-flow and variable liveranges in relation to basic-blocks
     \end{itemize} 
     \item[\faSignOut] Output: the LLVM assembly
@@ -345,9 +389,9 @@ Compiler implemented in Haskell, uses \texttt{\color{cyan!80!gray}llvm-hs-pure} 
       \begin{itemize}
         \item Multi-parameter typeclass: a relation over some types (represented by type variables)
         
-        \li{class Name a b c}: a type class over types $a, b, c$
+        \li{class Name a b c} \hfill a typeclass over types $a, b, c$
 
-        \li{instance Name bits32 bits32 bits64}: a type class instance given by $[a := \mathtt{bits32}, b := \mathtt{bits32}, c := \mathtt{bits64}]$
+        \li{instance Name bits32 bits32 bits64} \hfill a typeclass instance given by $[a := \mathtt{bits32}, b := \mathtt{bits32}, c := \mathtt{bits64}]$
 
         \vfill
 
@@ -355,7 +399,7 @@ Compiler implemented in Haskell, uses \texttt{\color{cyan!80!gray}llvm-hs-pure} 
         
         \li{m :: (a, b) -> c}: a method with the argument $(a, b)$ returning $c$
 
-        The \li{instance Name bits32 bits32 bits64} instance then contains the definition of the instance of $\mathtt{m}$ with the typing $(\mathtt{bits32}, \mathtt{bits32}) \to \mathtt{bits64}$
+        The class instance contains the instance of $\mathtt{m}$ typed $(\mathtt{bits32}, \mathtt{bits32}) \to \mathtt{bits64}$
 
         \vfill
         \item Functional dependencies: \li{class Name a b c | a b -> c} - specifies that, for any instance, each pair $a, b$ uniquely determines $c$ (we can deduce it)
@@ -373,7 +417,9 @@ Compiler implemented in Haskell, uses \texttt{\color{cyan!80!gray}llvm-hs-pure} 
 
         \item resource-representing objects defined in \li{stackdata \{ ... \}} blocks
         
-        \li{new Name: someType;} \hfill this defines a pointer \li{Name} to a stack-allocated object of \li{someType}
+        \li{Name: someType;} \hfill \li{Name} is a pointer to a stack-allocated object of \li{someType}
+
+        \li{Name: new someType;} \hfill ... and the object represents a resource ~\faArrowRight~ \li{drop}
 
         \vfill
         \item Automatically inserted calls to the \li{drop} function at function exits (\li{return}s)
@@ -393,11 +439,9 @@ Compiler implemented in Haskell, uses \texttt{\color{cyan!80!gray}llvm-hs-pure} 
 
         compile-time, link-time, run-time
         \item Each HM-style type is extended with a kind dimension and a constness dimension
-        \item Type (in-)nequalities can be specific to a dimension
-        
-        \xxx{obrazek}
+        \item Type (in-)nequalities can be specific to a dimension \hfill $\tau_1 \leq_{const} \tau_2$
         \item Different types can have a defined inequality relation in each dimension and yet be incomparable
-        \item \xxx{probly next slide: jaky tam byly problemy - jaky sou limity takovyho navrhu, co nejde, co jde}
+        \item Different types can be equal in every dimension and yet still be nonequal
       \end{itemize}
     }
   \end{itemize}
